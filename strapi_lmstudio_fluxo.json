@@ -1,0 +1,88 @@
+{
+  "name": "Fluxo Strapi → LM Studio → Strapi",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "avaliacao-nova",
+        "options": {}
+      },
+      "id": "Webhook_Entrada",
+      "name": "Webhook (Nova Avaliação)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:1234/v1/chat/completions",
+        "method": "POST",
+        "sendBody": true,
+        "jsonBody": {
+          "model": "microsoft/phi-4-mini",
+          "messages": [
+            {
+              "role": "system",
+              "content": "Analise o texto e diga se o sentimento é positivo, negativo ou neutro. Responda apenas com uma palavra."
+            },
+            {
+              "role": "user",
+              "content": "={{ $json[\"mensagem\"] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "Enviar_LMStudio",
+      "name": "Enviar p/ LM Studio",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [600, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://strapi:1337/api/avaliacaos/{{$json.id}}",
+        "method": "PUT",
+        "sendBody": true,
+        "jsonBody": {
+          "data": {
+            "avaliacao_automatica": "={{ $json[\"choices\"][0][\"message\"][\"content\"] }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "Atualizar_Strapi",
+      "name": "Atualizar Strapi",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [950, 300]
+    }
+  ],
+  "connections": {
+    "Webhook (Nova Avaliação)": {
+      "main": [
+        [
+          {
+            "node": "Enviar p/ LM Studio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar p/ LM Studio": {
+      "main": [
+        [
+          {
+            "node": "Atualizar Strapi",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

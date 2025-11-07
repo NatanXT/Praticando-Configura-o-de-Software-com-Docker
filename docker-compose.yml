@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # --- Banco de dados compartilhado ---
+  postgres:
+    image: postgres:16
+    container_name: postgres-db
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: devdb
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  # --- CMS Strapi (Backend) ---
+  strapi:
+    image: strapi/strapi
+    container_name: strapi-app
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_CLIENT: postgres
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: devdb
+      DATABASE_USERNAME: admin
+      DATABASE_PASSWORD: admin
+      APP_KEYS: appkey1,appkey2,appkey3,appkey4
+      API_TOKEN_SALT: tokensecret
+      ADMIN_JWT_SECRET: adminsecret
+      JWT_SECRET: jwtsecret
+    volumes:
+      - ./strapi-app:/srv/app
+    ports:
+      - "1337:1337"
+
+  # --- Automação n8n ---
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n-app
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - strapi
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=devdb
+      - DB_POSTGRESDB_USER=admin
+      - DB_POSTGRESDB_PASSWORD=admin
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=1234
+      - GENERIC_TIMEZONE=America/Sao_Paulo
+      - N8N_ENCRYPTION_KEY=senhaforte123
+    ports:
+      - "5678:5678"
+    volumes:
+      - ./n8n_data:/home/node/.n8n

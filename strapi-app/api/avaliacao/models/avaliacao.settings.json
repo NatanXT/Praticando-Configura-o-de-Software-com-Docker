@@ -1,0 +1,24 @@
+{
+  "kind": "collectionType",
+  "collectionName": "avaliacao",
+  "info": {
+    "name": "avaliacao"
+  },
+  "options": {
+    "increments": true,
+    "timestamps": true,
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "usuario": {
+      "type": "string"
+    },
+    "mensagem": {
+      "type": "richtext"
+    },
+    "avaliacao_automatica": {
+      "type": "string"
+    }
+  }
+}
